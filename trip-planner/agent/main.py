@@ -9,12 +9,12 @@ from langchain.tools import tool
 from langchain_core.messages import BaseMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
-from langgraph.graph import END, MessagesState, StateGraph
+from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode
-from langgraph.types import Command
+from langgraph.types import Command, interrupt
+from copilotkit import CopilotKitState
 
-
-class AgentState(MessagesState):
+class AgentState(CopilotKitState):
     """
     Here we define the state of the agent
 
@@ -23,6 +23,7 @@ class AgentState(MessagesState):
     which will be used to set the language of the agent.
     """
 
+    agent_name: str
     proverbs: List[str]
     tools: List[Any]
     # your_custom_agent_state: str = ""
@@ -62,6 +63,10 @@ async def chat_node(state: AgentState, config: RunnableConfig) -> Command[str]:
     For more about the ReAct design pattern, see:
     https://www.perplexity.ai/search/react-agents-NcXLQhreS0WDzpVaS4m9Cg
     """
+
+    # if not state.get("agent_name"):
+    #     # Interrupt and wait for the user to respond with a name
+    #     state["agent_name"] = interrupt("Before we start, what would you like to call me?")
 
     # 1. Define the model
     model = ChatOpenAI(model="gpt-5-mini")
