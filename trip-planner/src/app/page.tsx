@@ -1,6 +1,6 @@
 "use client"
 
-import { useCoAgent, useCopilotAction, useLangGraphInterrupt, useRenderToolCall } from "@copilotkit/react-core"
+import { useCoAgent, useCopilotAction, useDefaultTool, useLangGraphInterrupt, useRenderToolCall } from "@copilotkit/react-core"
 import { CopilotKitCSSProperties, CopilotSidebar } from "@copilotkit/react-ui"
 import { useState } from "react"
 
@@ -60,10 +60,11 @@ function YourMainContent({ themeColor }: { themeColor: string }) {
       required: true,
     }],
     handler: ({ proverb }) => {
-      setState({
-        ...state,
-        proverbs: [...(state.proverbs || []), proverb],
-      })
+      console.log("Adding proverb:", proverb)
+      setState(prev => ({
+        ...prev,
+        proverbs: [...(prev?.proverbs ?? []), proverb],
+      }))
     },
   })
 
@@ -75,8 +76,37 @@ function YourMainContent({ themeColor }: { themeColor: string }) {
     parameters: [
       { name: "location", type: "string", required: true },
     ],
-    render: ({ args }) => {
-      return <WeatherCard location={args.location} themeColor={themeColor} />
+    render: ({ args, result, status }) => {
+      if (status !== "complete") {
+        return (
+          <div className=" bg-[#667eea] text-white p-4 rounded-lg max-w-md">
+            <span className="animate-spin">⚙️ Retrieving weather...</span>
+          </div>
+        )
+      }
+
+      return (
+        <WeatherCard
+          location={args.location}
+          themeColor={themeColor}
+        />
+      )
+    },
+  })
+
+  useDefaultTool({
+    render: ({ name, args, status, result }) => {
+      return (
+        <div style={{ color: "black" }}>
+          <span>
+            {status === "complete" ? "✓" : "⏳"}
+            {name}
+          </span>
+          {status === "complete" && result && (
+            <pre>{JSON.stringify(result, null, 2)}</pre>
+          )}
+        </div>
+      )
     },
   })
 
