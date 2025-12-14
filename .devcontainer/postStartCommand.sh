@@ -14,9 +14,12 @@ az version
 az bicep version
 azd version
 
+uv --version
+node --version
+npm --version
+
 docker --version
 jq --version
 gh --version
-uv --version
 
 echo "postStartCommand.sh finished!"
