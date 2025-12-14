@@ -3,6 +3,9 @@
         {
             "path": "."
         },
+        {
+            "path": "trip-planner"
+        },
     ],
     "settings": {
         "dotenv.enableAutocloaking": false,
