@@ -1,6 +1,6 @@
 "use client"
 
-import { useCoAgent, useCopilotAction, useDefaultTool, useLangGraphInterrupt, useRenderToolCall } from "@copilotkit/react-core"
+import { useCoAgent, useCoAgentStateRender, useCopilotAction, useDefaultTool, useFrontendTool, useLangGraphInterrupt, useRenderToolCall } from "@copilotkit/react-core"
 import { CopilotKitCSSProperties, CopilotSidebar } from "@copilotkit/react-ui"
 import { useState } from "react"
 
@@ -38,6 +38,7 @@ export default function CopilotKitPage() {
 // State of the agent, make sure this aligns with your agent's state.
 type AgentState = {
   proverbs: string[]
+  searches?: { query: string; done: boolean }[]
 }
 
 function YourMainContent({ themeColor }: { themeColor: string }) {
@@ -49,6 +50,19 @@ function YourMainContent({ themeColor }: { themeColor: string }) {
         "CopilotKit may be new, but its the best thing since sliced bread.",
       ],
     },
+  })
+
+  useCoAgentStateRender<AgentState>({
+    name: "sample_agent", // the name the agent is served as
+    render: ({ state }) => (
+      <div>
+        {state.searches?.map((search, index) => (
+          <div key={index}>
+            {search.done ? "✅" : "❌"} {search.query}{search.done ? "" : "..."}
+          </div>
+        ))}
+      </div>
+    ),
   })
 
   // 🪁 Frontend Actions: https://docs.copilotkit.ai/coagents/frontend-actions
@@ -65,6 +79,53 @@ function YourMainContent({ themeColor }: { themeColor: string }) {
         ...prev,
         proverbs: [...(prev?.proverbs ?? []), proverb],
       }))
+    },
+  })
+
+  useFrontendTool({
+    name: "alertUser",
+    description: "Send an alert to a customer",
+    parameters: [
+      {
+        name: "name",
+        type: "string",
+        description: "The name of the customer to alert",
+        required: true,
+      },
+    ],
+    handler: async ({ name }) => {
+      alert(`Attention, ${name}!`)
+    },
+  })
+
+
+  useFrontendTool({
+    name: "sayHello",
+    description: "Say hello to the user",
+    parameters: [
+      {
+        name: "name",
+        type: "string",
+        description: "The name of the user to say hello to",
+        required: true,
+      },
+    ],
+    handler({ name }) {
+      // Handler returns the result of the tool call
+      return {
+        currentURLPath: window.location.href,
+        userName: name
+      }
+    },
+    render: ({ args, result }) => {
+      // Renders UI based on the data of the tool call
+      return (
+        <div>
+          <h1>Hello, {args.name}!</h1>
+          <h2>result.userName: {result?.userName}</h2>
+          <h2>result.currentURLPath {result?.currentURLPath}</h2>
+        </div>
+      )
     },
   })
 
@@ -99,6 +160,7 @@ function YourMainContent({ themeColor }: { themeColor: string }) {
       return (
         <div style={{ color: "black" }}>
           <span>
+            Tool call:
             {status === "complete" ? "✓" : "⏳"}
             {name}
           </span>
@@ -169,6 +231,13 @@ function YourMainContent({ themeColor }: { themeColor: string }) {
         {state.proverbs?.length === 0 && <p className="text-center text-white/80 italic my-8">
           No proverbs yet. Ask the assistant to add some!
         </p>}
+        <div className="flex flex-col gap-2 mt-4">
+          {state.searches?.map((search, index) => (
+            <div key={index} className="flex flex-row">
+              {search.done ? "✅" : "❌"} {search.query}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

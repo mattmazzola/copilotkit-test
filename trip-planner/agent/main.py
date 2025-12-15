@@ -3,16 +3,24 @@ This is the main entry point for the agent.
 It defines the workflow graph, state, tools, nodes and edges.
 """
 
-from typing import Any, List
+import asyncio
+from typing import Any, List, TypedDict
 
+from copilotkit import CopilotKitState
+from copilotkit.langgraph import copilotkit_emit_state
 from langchain.tools import tool
 from langchain_core.messages import BaseMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode
-from langgraph.types import Command, interrupt
-from copilotkit import CopilotKitState
+from langgraph.types import Command
+
+
+class Searches(TypedDict):
+    query: str
+    done: bool
+
 
 class AgentState(CopilotKitState):
     """
@@ -23,7 +31,8 @@ class AgentState(CopilotKitState):
     which will be used to set the language of the agent.
     """
 
-    agent_name: str
+    searches: list[Searches] = []
+    # agent_name: str
     proverbs: List[str]
     tools: List[Any]
     # your_custom_agent_state: str = ""
@@ -63,6 +72,22 @@ async def chat_node(state: AgentState, config: RunnableConfig) -> Command[str]:
     For more about the ReAct design pattern, see:
     https://www.perplexity.ai/search/react-agents-NcXLQhreS0WDzpVaS4m9Cg
     """
+    state["searches"] = [
+        {"query": "Initial research", "done": False},
+        {"query": "Retrieving sources", "done": False},
+        {"query": "Forming an answer", "done": False},
+    ]
+    # We can call copilotkit_emit_state to emit updated state
+    # before a node finishes
+    await copilotkit_emit_state(config, state)
+
+    # Simulate state updates
+    for search in state["searches"]:
+        await asyncio.sleep(1)
+        search["done"] = True
+
+        # We can also emit updates in a loop to simulate progress
+        await copilotkit_emit_state(config, state)
 
     # if not state.get("agent_name"):
     #     # Interrupt and wait for the user to respond with a name
