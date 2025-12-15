@@ -18,7 +18,10 @@
         "editor.codeActionsOnSave": {
             "source.fixAll": "explicit",
             "source.organizeImports": "explicit",
-        }
+        },
+        "ruff.interpreter": [
+            "${workspaceFolder}/trip-planner/agent/.venv/bin/python"
+        ]
     },
     "extensions": {
         "recommendations": [
